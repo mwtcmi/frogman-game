@@ -255,6 +255,8 @@ footer.brand { padding: 14px 24px; border-top: 1px solid #1a2342;
   text-align: center; font: 500 11px/1.4 system-ui, sans-serif;
   color: var(--muted); letter-spacing: 1px; }
 footer.brand .sangoma { color: var(--sangoma); font-weight: 700; }
+footer.brand a { color: var(--freepbx); text-decoration: none; }
+footer.brand a:hover { text-decoration: underline; }
 </style></head><body>
 <header class="brand">
   <img class="mascot" src="https://mwtcmi.github.io/tangohop/images/freepbx/tango8bit.png" alt="Tango — freePBX">
@@ -274,7 +276,7 @@ footer.brand .sangoma { color: var(--sangoma); font-weight: 700; }
   </table>
 </main>
 <footer class="brand">
-  Built on <em>denodell/frogger</em> &nbsp;·&nbsp; <span class="sangoma">© Sangoma</span> · FreePBX is a registered trademark of Sangoma Technologies
+  Built on <a href="https://github.com/denodell/frogger" target="_blank" rel="noopener"><em>denodell/frogger</em></a> &nbsp;·&nbsp; <span class="sangoma">© Sangoma</span> · FreePBX is a registered trademark of Sangoma Technologies
 </footer>
 <script>
 const rows = document.getElementById('rows');
