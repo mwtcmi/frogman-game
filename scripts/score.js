@@ -13,7 +13,7 @@
   let currentScore = 0;
   let localHighScore = +localStorage.getItem(STORE_KEY) || 0;
   let serverRank = null;
-  let gameStartedAt = 0;
+  let gameStartedAt = Date.now();
   let submittedForThisRun = false;
 
   // ---------- HUD ----------
