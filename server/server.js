@@ -264,7 +264,7 @@ footer.brand .sangoma { color: var(--sangoma); font-weight: 700; }
   </h1>
   <div class="spacer"></div>
   <a class="cta play" href="https://mwtcmi.github.io/tangohop/" target="_blank" rel="noopener">Play</a>
-  <a class="cta merch" href="https://merch.sangoma.com" target="_blank" rel="noopener">Merch</a>
+  <a class="cta merch" href="https://merch.sangoma.com/unisex-men-s-t-shirts" target="_blank" rel="noopener">Merch</a>
 </header>
 <main>
   <div class="live"><span class="dot"></span>TOP 10 // LIVE</div>
