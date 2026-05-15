@@ -138,7 +138,7 @@
         PALETTE.laneDash, 4, [30, 22]
       );
     }
-    drawTag(ctx, "SIP TRUNK LANES", 14, row(9) + 6, PALETTE.laneDash, PALETTE.void);
+    drawTag(ctx, "SIPStation Trunk Lanes", 14, row(9) + 6, PALETTE.laneDash, PALETTE.void);
 
     // Bright green band marking the road/LAN boundary so the frog's starting
     // row reads clearly as safe ground rather than another lane.
