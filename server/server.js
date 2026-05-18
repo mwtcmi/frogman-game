@@ -92,7 +92,12 @@ setInterval(() => {
 
 const top10 = () => getTop10Stmt.all();
 
+// SSE client tracking with global + per-IP caps so one peer can't open
+// thousands of EventSource connections and pin RAM / stall broadcasts.
+const SSE_MAX_CLIENTS = 200;
+const SSE_MAX_PER_IP = 3;
 const sseClients = new Set();
+const sseByIp = new Map();
 const broadcastTop10 = () => {
   const payload = JSON.stringify(top10());
   for (const res of sseClients) {
@@ -139,6 +144,13 @@ app.get('/health', (req, res) => res.json({ ok: true }));
 app.get('/api/leaderboard', (req, res) => res.json(top10()));
 
 app.get('/api/leaderboard/sse', (req, res) => {
+  const ip = req.ip;
+  const ipCount = sseByIp.get(ip) || 0;
+  if (sseClients.size >= SSE_MAX_CLIENTS || ipCount >= SSE_MAX_PER_IP) {
+    log('warn', 'sse_rejected', { ip, total: sseClients.size, perIp: ipCount });
+    return res.status(503).json({ error: 'sse_capacity' });
+  }
+
   res.set({
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache, no-transform',
@@ -148,8 +160,18 @@ app.get('/api/leaderboard/sse', (req, res) => {
   res.flushHeaders();
   res.write(`event: top10\ndata: ${JSON.stringify(top10())}\n\n`);
   sseClients.add(res);
+  sseByIp.set(ip, ipCount + 1);
   const ping = setInterval(() => { try { res.write(`: ping\n\n`); } catch {} }, 25_000);
-  req.on('close', () => { clearInterval(ping); sseClients.delete(res); });
+  const cleanup = () => {
+    clearInterval(ping);
+    if (sseClients.delete(res)) {
+      const remaining = (sseByIp.get(ip) || 1) - 1;
+      if (remaining <= 0) sseByIp.delete(ip);
+      else sseByIp.set(ip, remaining);
+    }
+  };
+  req.on('close', cleanup);
+  res.on('error', cleanup);
 });
 
 app.post('/api/score', scoreLimiter, (req, res) => {
@@ -168,7 +190,11 @@ app.post('/api/score', scoreLimiter, (req, res) => {
   if (typeof nonce !== 'string' || nonce.length < 8 || nonce.length > 64) return reject('bad_nonce');
   if (typeof signature !== 'string' || !HEX64_RE.test(signature)) return reject('bad_signature');
 
-  if (profanityMatcher && profanityMatcher.hasMatch(name)) {
+  // Strip allowed-but-evasive separators ('_' and '-') before profanity check —
+  // otherwise `f_u_c_k` and `sh-it` pass through. The original `name` is what
+  // gets stored; we only normalize for the match.
+  const nameForFilter = name.replace(/[_-]/g, '');
+  if (profanityMatcher && profanityMatcher.hasMatch(nameForFilter)) {
     log('info', 'score_reject', { reason: 'profanity', ip, name });
     return res.status(400).json({
       error: 'profanity',

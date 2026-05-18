@@ -7,7 +7,12 @@ tangohop.freepbxapps.com {
 
 	@backend path /api/* /leaderboard /health
 	handle @backend {
-		reverse_proxy 127.0.0.1:3000
+		reverse_proxy 127.0.0.1:3000 {
+			# Overwrite (not append) X-Forwarded-For with the real client IP so a
+			# spoofed XFF from the client can't slip through Express's trust-proxy
+			# logic and defeat the per-IP rate limit.
+			header_up X-Forwarded-For {remote_host}
+		}
 	}
 
 	handle {
