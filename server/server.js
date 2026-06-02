@@ -3,6 +3,8 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const Database = require('better-sqlite3');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const SECRET_HEX = process.env.TANGOHOP_SECRET || process.env.FROGMAN_SECRET;
@@ -38,6 +40,21 @@ async function initProfanityFilter() {
     ...englishDataset.build(),
     ...englishRecommendedTransformers,
   });
+}
+
+// Disposable email blocklist. Sourced from disposable-email-domains/disposable-
+// email-domains. Loaded at boot from a sibling file so we don't reach the
+// network. Fail-open if the file is missing so a bad deploy doesn't take
+// score submission offline — the rest of the layered defenses still apply.
+let disposableDomains = null;
+try {
+  const raw = fs.readFileSync(path.join(__dirname, 'disposable-email-domains.txt'), 'utf8');
+  disposableDomains = new Set(
+    raw.split('\n').map(s => s.trim().toLowerCase()).filter(Boolean)
+  );
+  log('info', 'disposable_list_loaded', { count: disposableDomains.size });
+} catch (e) {
+  log('warn', 'disposable_list_missing', { error: e.message });
 }
 
 const db = new Database(DB_PATH);
@@ -250,6 +267,16 @@ app.post('/api/score', scoreLimiter, (req, res) => {
 
   if (typeof name !== 'string' || !NAME_RE.test(name)) return reject('bad_name');
   if (typeof email !== 'string' || email.length > 120 || !EMAIL_RE.test(email.trim())) return reject('bad_email');
+  if (disposableDomains) {
+    const domain = email.trim().toLowerCase().split('@')[1];
+    if (domain && disposableDomains.has(domain)) {
+      log('info', 'score_reject', { reason: 'disposable_email', ip, name, domain });
+      return res.status(400).json({
+        error: 'disposable_email',
+        message: "Please use an email you'll actually check — that's how we contact winners."
+      });
+    }
+  }
   if (!Number.isInteger(score) || score < 0 || score > 1_000_000) return reject('bad_score');
   if (!Number.isInteger(durationMs) || durationMs < 1 || durationMs > 7_200_000) return reject('bad_duration');
   if (typeof nonce !== 'string' || nonce.length < 8 || nonce.length > 64) return reject('bad_nonce');
