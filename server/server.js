@@ -93,14 +93,15 @@ setInterval(() => {
   if (r.changes > 0) log('info', 'nonce_purge', { count: r.changes });
 }, 3600 * 1000).unref();
 
-// PII retention: null out email/ip/ua on rows older than the retention window
-// so a backup leak or stolen disk doesn't expose a forever-growing attendee
-// list keyed to IPs. Scores + names stay (those are the leaderboard product).
+// PII retention: null out ip/ua on rows older than the retention window so a
+// backup leak doesn't expose a forever-growing attendee list keyed to IPs.
+// Emails are retained — they're how we contact prize winners. Scores + names
+// stay (those are the leaderboard product).
 const PII_RETENTION_MS = 30 * 24 * 3600 * 1000;
 const piiPurgeStmt = db.prepare(`
-  UPDATE scores SET email = NULL, ip = NULL, ua = NULL
+  UPDATE scores SET ip = NULL, ua = NULL
   WHERE created_at < ?
-    AND (email IS NOT NULL OR ip IS NOT NULL OR ua IS NOT NULL)
+    AND (ip IS NOT NULL OR ua IS NOT NULL)
 `);
 const purgePII = () => {
   const cutoff = Date.now() - PII_RETENTION_MS;

@@ -106,11 +106,15 @@
                  border-radius:4px; font:600 14px ui-monospace, Menlo, monospace;
                  margin-bottom:10px;">
         <input id="th-email" type="email" maxlength="120" required
-          placeholder="Email (swag only, auto-deleted after 30 days)"
+          placeholder="Email (for prize contact)"
           style="width:100%; box-sizing:border-box; padding:10px;
                  background:#0a0f1a; color:#e7eefc; border:1px solid #2a3654;
                  border-radius:4px; font:14px system-ui, sans-serif;
-                 margin-bottom:16px;">
+                 margin-bottom:6px;">
+        <p style="margin:0 0 14px; font:400 11px/1.4 system-ui, sans-serif;
+                  color:#7a92b8;">
+          We'll only use this to contact prize winners.
+        </p>
         <div style="display:flex; gap:8px; justify-content:flex-end;">
           <button id="th-skip" style="padding:8px 14px; background:transparent;
             color:#7a92b8; border:1px solid #2a3654; border-radius:4px;
