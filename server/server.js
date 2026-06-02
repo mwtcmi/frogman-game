@@ -112,7 +112,9 @@ const top10 = () => getTop10Stmt.all();
 // SSE client tracking with global + per-IP caps so one peer can't open
 // thousands of EventSource connections and pin RAM / stall broadcasts.
 const SSE_MAX_CLIENTS = 200;
-const SSE_MAX_PER_IP = 3;
+// Per-IP cap is generous because a booth NAT can put many legitimate viewers
+// (display + staff browsers + reconnects) behind a single outbound IP.
+const SSE_MAX_PER_IP = 20;
 const sseClients = new Set();
 const sseByIp = new Map();
 const broadcastTop10 = () => {
