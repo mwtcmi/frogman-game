@@ -69,6 +69,9 @@ const getRankStmt = db.prepare(`
   SELECT COUNT(*) + 1 AS rank FROM scores
   WHERE score > ? OR (score = ? AND created_at < ?)
 `);
+// One row per email, so this is unique-players-who-submitted, shown on the
+// booth leaderboard alongside the top 10.
+const getPlayerCountStmt = db.prepare(`SELECT COUNT(*) AS n FROM scores`);
 const insertScoreStmt = db.prepare(`
   INSERT INTO scores (name, email, score, duration_ms, ip, ua, created_at)
   VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -117,10 +120,15 @@ const SSE_MAX_CLIENTS = 200;
 const SSE_MAX_PER_IP = 20;
 const sseClients = new Set();
 const sseByIp = new Map();
+const playerCount = () => getPlayerCountStmt.get().n;
 const broadcastTop10 = () => {
-  const payload = JSON.stringify(top10());
+  const topPayload = JSON.stringify(top10());
+  const players = String(playerCount());
   for (const res of sseClients) {
-    try { res.write(`event: top10\ndata: ${payload}\n\n`); } catch {}
+    try {
+      res.write(`event: top10\ndata: ${topPayload}\n\n`);
+      res.write(`event: players\ndata: ${players}\n\n`);
+    } catch {}
   }
 };
 
@@ -179,6 +187,7 @@ app.get('/api/leaderboard/sse', (req, res) => {
   });
   res.flushHeaders();
   res.write(`event: top10\ndata: ${JSON.stringify(top10())}\n\n`);
+  res.write(`event: players\ndata: ${playerCount()}\n\n`);
   sseClients.add(res);
   sseByIp.set(ip, ipCount + 1);
   let ping;
@@ -340,6 +349,8 @@ main { flex: 1; display: flex; flex-direction: column; padding: 4vh 6vw 2vh; }
   margin-bottom: 3vh;
   color: var(--freepbx); font: 700 2vh/1 "Arcade Classic", ui-monospace, monospace;
   letter-spacing: 0.4em; }
+.live .sep { opacity: 0.5; }
+.live #players { color: var(--ink); }
 .dot { display: inline-block; width: 1.2vh; height: 1.2vh; border-radius: 50%;
   background: var(--freepbx); box-shadow: 0 0 12px var(--freepbx);
   animation: pulse 1.5s infinite; }
@@ -374,7 +385,7 @@ footer.brand a:hover { text-decoration: underline; }
   <a class="cta merch" href="https://merch.sangoma.com/unisex-men-s-t-shirts" target="_blank" rel="noopener">Merch</a>
 </header>
 <main>
-  <div class="live"><span class="dot"></span>TOP 10 // LIVE</div>
+  <div class="live"><span class="dot"></span>TOP 10 // LIVE<span class="sep">·</span><span id="players">—</span>&nbsp;PLAYERS</div>
   <table>
     <thead><tr><th>#</th><th>Name</th><th style="text-align:right">Score</th></tr></thead>
     <tbody id="rows"><tr><td colspan="3" class="empty">WAITING FOR PLAYERS...</td></tr></tbody>
@@ -385,6 +396,7 @@ footer.brand a:hover { text-decoration: underline; }
 </footer>
 <script nonce="__CSP_NONCE__">
 const rows = document.getElementById('rows');
+const playersEl = document.getElementById('players');
 let seen = new Set();
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function render(top){
@@ -398,6 +410,7 @@ function render(top){
 function connect(){
   const es = new EventSource('/api/leaderboard/sse');
   es.addEventListener('top10', e => { try { render(JSON.parse(e.data)); } catch(err){} });
+  es.addEventListener('players', e => { playersEl.textContent = e.data; });
   es.onerror = () => { es.close(); setTimeout(connect, 3000); };
 }
 connect();
