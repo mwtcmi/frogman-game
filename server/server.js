@@ -458,7 +458,7 @@ footer.brand a:hover { text-decoration: underline; }
 <main>
   <div class="live"><span class="dot"></span>TOP 10 // LIVE<span class="sep">·</span><span id="players">—</span>&nbsp;PLAYERS</div>
   <div class="notice">Winners verified before prizes are awarded</div>
-  <div class="notice">Also from us — <a href="https://github.com/mwtcmi/frogman" target="_blank" rel="noopener">Frogman</a>, a headless FreePBX module</div>
+  <div class="notice">New: <a href="https://github.com/mwtcmi/frogman" target="_blank" rel="noopener">Frogman</a> — headless FreePBX, 234 tools, plug in any AI</div>
   <table>
     <thead><tr><th>#</th><th>Name</th><th style="text-align:right">Score</th></tr></thead>
     <tbody id="rows"><tr><td colspan="3" class="empty">WAITING FOR PLAYERS...</td></tr></tbody>
